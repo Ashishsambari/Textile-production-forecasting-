@@ -1,0 +1,55 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Assuming 'full_weaving_dataset.csv.zip' is present in the '/content/' directory
+data = pd.read_csv('/content/Book2.csv')
+
+# Perform Label Encoding for categorical data (if necessary)
+le = LabelEncoder()
+for col in data.columns:
+    if data[col].dtype == 'object':
+        data[col] = le.fit_transform(data[col])
+
+# Split the data into features (X) and the target variable (y)
+X = data.drop('Total_pdn_per_order', axis=1)
+y = data['Total_pdn_per_order']
+
+# Initialize a list to store accuracies
+accuracies = []
+
+# Perform 10 iterations
+for iteration in range(10):
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.7, random_state=iteration *42)
+
+    # Handle missing values using SimpleImputer
+    imputer = SimpleImputer(strategy='mean')
+    X_train_imputed = pd.DataFrame(imputer.fit_transform(X_train), columns=X_train.columns)
+    X_test_imputed = pd.DataFrame(imputer.transform(X_test), columns=X_test.columns)
+
+    # Create a Decision Tree Regressor model
+    dt_reg = DecisionTreeRegressor(random_state=42)
+
+    # Fit the model on the training data
+    dt_reg.fit(X_train_imputed, y_train)
+
+    # Make predictions on the test data
+    y_pred = dt_reg.predict(X_test_imputed)
+
+    # Calculate the accuracy (R2) of the model
+    accuracy = dt_reg.score(X_test_imputed, y_test)
+    
+    # Append accuracy to the list
+    accuracies.append(accuracy)
+
+    # Print results for each iteration
+    print(f"Iteration {iteration + 1} - Accuracy: {accuracy:.4f}")
+
+# Calculate and print the mean accuracy
+mean_accuracy = np.mean(accuracies)
+print(f"\nMean Accuracy over 10 iterations: {mean_accuracy:.4f}")
